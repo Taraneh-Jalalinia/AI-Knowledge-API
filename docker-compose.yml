@@ -1,0 +1,60 @@
+# AI Knowledge API - Docker Compose
+# Run: docker-compose up -d
+# Services: app, postgres (or mysql), redis, chromadb, celery worker
+
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/knowledge_db
+      - REDIS_URL=redis://redis:6379/0
+      - CHROMA_HOST=chromadb
+      - JWT_SECRET=your-secret
+    depends_on:
+      - db
+      - redis
+      - chromadb
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  celery:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/knowledge_db
+      - REDIS_URL=redis://redis:6379/0
+      - CHROMA_HOST=chromadb
+    depends_on:
+      - db
+      - redis
+      - chromadb
+    command: celery -A app.tasks worker --loglevel=info
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: knowledge_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  chromadb:
+    image: chromadb/chroma:latest
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+
+volumes:
+  pgdata:
+  chroma_data:
