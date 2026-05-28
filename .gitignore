@@ -1,2 +1,11 @@
-tests/__pycache__/
-app/__pycache__/
+__pycache__/
+*.py[cod]
+.env
+uploads/
+*.db
+test_knowledge.db
+.pytest_cache/
+.venv/
+venv/
+*.code-workspace
+pytest-cache-files-*/

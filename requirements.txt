@@ -1,31 +1,29 @@
 # Web
 fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
+python-multipart
 
 # Auth
 python-jose[cryptography]
 passlib[bcrypt]
-python-multipart
 
-# DB (choose one)
-# sqlalchemy>=2.0
-# asyncpg  # if async PostgreSQL
-# psycopg2-binary  # if sync PostgreSQL
-# PyMySQL  # if MySQL
+# DB
+sqlalchemy>=2.0
+psycopg2-binary
 
-# Vector DB & RAG
-chromadb
-llama-index>=0.10.0
-# llama-index embeddings (e.g. OpenAI or local)
-# llama-index-embeddings-openai
+# Config & validation
+pydantic-settings>=2.0
+python-dotenv
+email-validator
+
+# Vector DB & documents
+chromadb>=0.4.0
+pypdf>=4.0.0
 
 # Async tasks & cache
 celery[redis]
 redis>=5.0.0
 
-# File handling
-pydantic-settings
-# PyPDF2 or pypdf  # for PDF parsing
-
-# Test (optional: requirements-dev.txt)
+# Tests
 pytest>=7.0.0
+httpx>=0.26.0

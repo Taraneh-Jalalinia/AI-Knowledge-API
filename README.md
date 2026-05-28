@@ -1,49 +1,131 @@
-# AI Knowledge API (RAG + FastAPI + Async)
+# AI Knowledge API
 
-Skeleton for a RAG-powered API: document ingestion, background embeddings (Celery + Redis), and cached query API.
+Portfolio backend project: a document Q&A API with **vector search** (ChromaDB), background embedding jobs (**Celery + Redis**), query caching, and **JWT** auth. Answers are built from retrieved passages (no external LLM API required for the demo; CI uses a mock mode).
 
 ## Tech stack
 
-- **Python 3.11+**, **FastAPI**
-- **PostgreSQL** (relational), **ChromaDB** (vectors)
-- **Redis** + **Celery** (background embedding tasks + query cache)
-- **LlamaIndex** (RAG pipeline)
-- **Docker** + **docker-compose**
+| Layer | Technology |
+|-------|------------|
+| API | FastAPI, Python 3.11+ |
+| Database | PostgreSQL (SQLAlchemy) |
+| Vectors | ChromaDB |
+| Background jobs | Celery + Redis |
+| Cache | Redis |
+| Deploy | Docker Compose |
 
-## What’s in the skeleton
+## Features
 
-- `app/main.py` – FastAPI app; wire in routers and CORS.
-- `app/api/upload.py` – Upload PDF/text → DB record → enqueue Celery task.
-- `app/api/query.py` – Query → cache check (Redis) → RAG (LlamaIndex + ChromaDB) → cache and return.
-- `app/models.py` – Define User and Document models (DB).
-- `app/tasks.py` – Celery task: load document, embed with LlamaIndex, write to ChromaDB, update document status.
-- `app/utils.py` – RAG helpers and Redis get/set for cache.
-- `requirements.txt`, `Dockerfile`, `docker-compose.yml` – Dependencies and run environment.
+- **JWT authentication** — `/auth/signup`, `/auth/login`
+- **Document upload** — PDF and `.txt` via `/documents/upload`
+- **Async embedding** — Celery worker chunks text and indexes into ChromaDB
+- **Semantic search / RAG-style query** — `/query/` retrieves top passages from ChromaDB and returns a stitched answer (optional `RAG_MOCK` for local/CI without Chroma)
+- **Query caching** — Redis caches responses per user + query hash
+- **OpenAPI docs** — http://localhost:8000/docs
 
-## What you need to implement
+## Architecture
 
-1. **Auth**: JWT login/register and `get_current_user` dependency; protect upload and query routes.
-2. **Models & DB**: Implement User and Document in `models.py`, run migrations.
-3. **Upload**: File validation, save file, insert Document, call `process_document_embeddings.delay(doc_id)`.
-4. **Tasks**: In `tasks.py`, implement `process_document_embeddings`: read file, chunk, embed (LlamaIndex), index in ChromaDB, set status to `ready`.
-5. **RAG & cache**: In `utils.py`, implement `run_rag_query` (LlamaIndex + ChromaDB) and Redis cache get/set; use them in `query.py`.
-
-## Tests and CI
-
-- **Run tests locally:** `pip install -r requirements.txt` then `pytest -v`
-- **GitHub Actions:** `.github/workflows/ci.yml` runs tests on push/PR to `main` or `master`. Add the workflow to your repo to get checks on every push.
-
-## Run locally
-
-```bash
-# With Docker
-docker-compose up -d
-# API: http://localhost:8000
-# Docs: http://localhost:8000/docs
+```mermaid
+flowchart LR
+  Client --> FastAPI
+  FastAPI --> PostgreSQL
+  FastAPI --> Redis
+  FastAPI --> Celery
+  Celery --> ChromaDB
+  Celery --> PostgreSQL
+  FastAPI --> ChromaDB
 ```
 
-## GitHub / presentation
+## Quick start
 
-- Commit regularly (e.g. 3 commits/day).
-- Add README screenshots of API responses and link to OpenAPI/Swagger.
-- Optional: deploy on Railway/Heroku and add the live URL to the README.
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+- API: http://localhost:8000  
+- Swagger: http://localhost:8000/docs  
+- Chroma (host): http://localhost:8001  
+
+### Local development (without Docker)
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate   # Windows
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+Run Celery in a second terminal:
+
+```bash
+celery -A app.tasks:celery_app worker --loglevel=info
+```
+
+## Example flow
+
+1. **Register**
+
+```http
+POST /auth/signup
+{
+  "first_name": "Alex",
+  "email": "alex@example.com",
+  "password": "securepass123"
+}
+```
+
+2. **Upload** (Bearer token required)
+
+```http
+POST /documents/upload
+Content-Type: multipart/form-data
+file: report.pdf
+```
+
+3. **Query**
+
+```http
+POST /query/
+Authorization: Bearer <access_token>
+{ "query": "What are the main risks mentioned?" }
+```
+
+Response:
+
+```json
+{
+  "answer": "...",
+  "sources": ["report.pdf"],
+  "cached": false
+}
+```
+
+## Tests & CI
+
+```bash
+pip install -r requirements.txt
+pytest -v
+```
+
+CI runs on push/PR via `.github/workflows/ci.yml` (SQLite + mock RAG, no external services required).
+
+## Project structure
+
+```
+app/
+├── main.py           # FastAPI entry
+├── api/              # auth, upload, query routes
+├── models.py         # User, Document
+├── tasks.py          # Celery embedding worker
+├── utils.py          # JWT, RAG, Redis cache
+├── config.py         # Settings from env
+└── database.py       # SQLAlchemy session
+```
+
+## Environment variables
+
+See [`.env.example`](.env.example). Set strong `JWT_SECRET_KEY` values before deploying.
+
+## License
+
+MIT — portfolio / learning project.
