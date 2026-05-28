@@ -1,8 +1,5 @@
-# AI Knowledge API - Docker Compose
-# Run: docker-compose up -d
-# Services: app, postgres (or mysql), redis, chromadb, celery worker
-
-version: "3.8"
+# AI Knowledge API - docker-compose up -d
+# API: http://localhost:8000/docs
 
 services:
   app:
@@ -10,10 +7,15 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://user:pass@db:5432/knowledge_db
-      - REDIS_URL=redis://redis:6379/0
-      - CHROMA_HOST=chromadb
-      - JWT_SECRET=your-secret
+      DATABASE_URL: postgresql://user:pass@db:5432/knowledge_db
+      REDIS_URL: redis://redis:6379/0
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: 8000
+      JWT_SECRET_KEY: dev-secret-change-in-production-32chars
+      JWT_REFRESH_SECRET_KEY: dev-refresh-secret-change-prod-32chars
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
       - db
       - redis
@@ -23,14 +25,18 @@ services:
   celery:
     build: .
     environment:
-      - DATABASE_URL=postgresql://user:pass@db:5432/knowledge_db
-      - REDIS_URL=redis://redis:6379/0
-      - CHROMA_HOST=chromadb
+      DATABASE_URL: postgresql://user:pass@db:5432/knowledge_db
+      REDIS_URL: redis://redis:6379/0
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: 8000
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
       - db
       - redis
       - chromadb
-    command: celery -A app.tasks worker --loglevel=info
+    command: celery -A app.tasks:celery_app worker --loglevel=info
 
   db:
     image: postgres:15-alpine
@@ -58,3 +64,4 @@ services:
 volumes:
   pgdata:
   chroma_data:
+  uploads_data:
