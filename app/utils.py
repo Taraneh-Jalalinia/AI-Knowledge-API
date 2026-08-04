@@ -214,17 +214,6 @@ def run_rag_query(query: str, user_id: int) -> dict[str, Any]:
         }
     else:
 
-
-
-
-
-
-
-
-
-
-
-
         try:
             collection = get_chroma_collection()
             results = collection.query(query_texts=[query], n_results=3)
@@ -249,32 +238,25 @@ def run_rag_query(query: str, user_id: int) -> dict[str, Any]:
         sources = list({m.get("filename", "unknown") for m in metadatas[0] if m})
 
 
-
-
         #Call LLM to summarize the passages and provide a concise answer
-        from groq import Groq
-
-
-
-
         client = Groq(
             api_key=os.environ.get("GROQ_API_KEY"),
         )
 
+        try:
+            chat_completion = client.chat.completions.create(
+                messages=[
+                    {
+                        "role": "user",
+                        "content": f"Based on the knowledge base, respond to the query '{query}', knowledge base: {passages}",
+                    }
+                ],
+                model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+            )
 
-
-
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"Based on the knowledge base, respond to the query '{query}', knowledge base: {passages}",
-                }
-            ],
-            model=os.getenv("GROQ_MODEL", ""),
-        )
-
-
+        
+        except Exception as e:
+            return {"answer": "LLM service unavailable. Try again later.", "sources": sources}
 
 
         return {
