@@ -6,7 +6,6 @@ python-multipart
 # Auth
 bcrypt==4.0.1
 python-jose[cryptography]
-passlib[bcrypt]
 
 # DB
 sqlalchemy>=2.0
