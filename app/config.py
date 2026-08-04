@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     rag_mock: bool = False
     cache_ttl_seconds: int = 3600
 
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+
 
 @lru_cache
 def get_settings() -> Settings:
