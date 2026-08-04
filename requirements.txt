@@ -27,3 +27,6 @@ redis>=5.0.0
 # Tests
 pytest>=7.0.0
 httpx>=0.26.0
+
+#Api
+groq>=1.6.0
