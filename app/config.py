@@ -8,7 +8,7 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./knowledge.db"
     redis_url: str = "redis://localhost:6379/0"
-    chroma_host: str = "chrmadb.railway.internal"
+    chroma_host: str = "localhost"
     chroma_port: int = 8001
     chroma_collection: str = "knowledge_docs"
 
